@@ -48,6 +48,34 @@ body {
 
 h1 {
   text-align: center;
+  color: black;
+}
+
+form,
+.edit-form {
+  display: grid;
+  gap: 12px;
+}
+
+form {
+  max-width: 640px;
+  margin: 0 auto 24px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+textarea {
+  min-height: 96px;
+  resize: vertical;
 }
 
 .choreo-container {
@@ -62,6 +90,7 @@ h1 {
   padding: 15px;
   border-radius: 10px;
   box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
 .choreo-card h3 {
@@ -75,12 +104,31 @@ h1 {
   text-decoration: none;
 }
 
-.choreo-card button {
+.card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.card-actions button,
+form button {
   margin-top: 10px;
   padding: 6px 10px;
-  background: #ef4444;
   color: white;
   border: none;
   border-radius: 6px;
   cursor: pointer;
+}
+
+.primary-button,
+form button {
+  background: #2563eb;
+}
+
+.secondary-button {
+  background: #6b7280;
+}
+
+.danger-button {
+  background: #ef4444;
 }
