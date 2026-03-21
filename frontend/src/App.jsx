@@ -29,12 +29,20 @@ const emptyForm = {
   notes: ''
 }
 
+const defaultFilters = {
+  style: '',
+  difficulty: '',
+  status: '',
+  sortBy: 'newest'
+}
+
 // fetch and display choreography
 function App() {
   const [choreography, setChoreography] = useState([])
   const [formData, setFormData] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [editFormData, setEditFormData] = useState(emptyForm)
+  const [filters, setFilters] = useState(defaultFilters)
 
   useEffect( () => {
     const fetchChoreography = async () => {
@@ -62,6 +70,17 @@ function App() {
       ...editFormData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handleFilterChange = (e) => {
+    setFilters({
+      ...filters,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const resetFilters = () => {
+    setFilters(defaultFilters)
   }
 
   const handleSubmit = async (e) => {
@@ -139,9 +158,38 @@ function App() {
     }
   }
 
+  const filteredChoreography = choreography
+    .filter((choreo) => {
+      if (filters.style && choreo.style !== filters.style) {
+        return false
+      }
+
+      if (filters.difficulty && choreo.difficulty !== filters.difficulty) {
+        return false
+      }
+
+      if (filters.status && choreo.status !== filters.status) {
+        return false
+      }
+
+      return true
+    })
+    .sort((firstChoreo, secondChoreo) => {
+      switch (filters.sortBy) {
+        case 'oldest':
+          return new Date(firstChoreo.createdAt) - new Date(secondChoreo.createdAt)
+        case 'title-asc':
+          return firstChoreo.title.localeCompare(secondChoreo.title)
+        case 'title-desc':
+          return secondChoreo.title.localeCompare(firstChoreo.title)
+        default:
+          return new Date(secondChoreo.createdAt) - new Date(firstChoreo.createdAt)
+      }
+    })
+
   return (
     <div>
-      <h1>Choreography</h1>
+      <h1>Save Your Choreos!</h1>
 
       <form onSubmit={handleSubmit}>
         <input
@@ -203,8 +251,69 @@ function App() {
         <button type="submit">Add Choreography</button>
       </form>
 
+      <div className="toolbar">
+        <div className="toolbar-grid">
+          <select
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
+            <option value="">By Status</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </select>
+
+          <select
+            name="style"
+            value={filters.style}
+            onChange={handleFilterChange}
+          >
+            <option value="">By Style</option>
+            {styleOptions.map((style) => (
+              <option key={style} value={style}>{style}</option>
+            ))}
+          </select>
+
+          <select
+            name="difficulty"
+            value={filters.difficulty}
+            onChange={handleFilterChange}
+          >
+            <option value="">By Difficulty</option>
+            {difficultyOptions.map((difficulty) => (
+              <option key={difficulty} value={difficulty}>{difficulty}</option>
+            ))}
+          </select>
+
+          <select
+            name="sortBy"
+            value={filters.sortBy}
+            onChange={handleFilterChange}
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="title-asc">Title A-Z</option>
+            <option value="title-desc">Title Z-A</option>
+          </select>
+        </div>
+
+        <div className="toolbar-footer">
+          <p className="results-count">
+            Showing {filteredChoreography.length} of {choreography.length} choreos
+          </p>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={resetFilters}
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
       <div className="choreo-container">
-        {choreography.map((choreo) => (
+        {filteredChoreography.map((choreo) => (
           <div className="choreo-card" key={choreo._id}>
             {editingId === choreo._id ? (
               <div className="edit-form">
@@ -318,6 +427,10 @@ function App() {
           </div>
         ))}
       </div>
+
+      {filteredChoreography.length === 0 && (
+        <p className="empty-state">No choreos match the current filters yet.</p>
+      )}
     </div>
   )
 }
