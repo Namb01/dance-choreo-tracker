@@ -51,6 +51,15 @@ h1 {
   color: black;
 }
 
+.error-message {
+  max-width: 640px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 form,
 .edit-form {
   display: grid;

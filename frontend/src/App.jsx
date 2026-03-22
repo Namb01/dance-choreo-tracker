@@ -44,15 +44,22 @@ function App() {
   const [editFormData, setEditFormData] = useState(emptyForm)
   const [filters, setFilters] = useState(defaultFilters)
 
+  // error checking for missing inputs
+  const [errorMessage, setErrorMessage] = useState('')
+
   useEffect( () => {
     const fetchChoreography = async () => {
       try {
         const response = await fetch(API_URL)
+        if (!response.ok) {
+          throw new Error('Unable to load choreography.')
+        }
         const data = await response.json()
         setChoreography(data)
       } 
       catch (error) {
         console.error('Error fetching choreography:', error)
+        setErrorMessage(error.message)
       }
     }
     fetchChoreography()
@@ -87,6 +94,7 @@ function App() {
     e.preventDefault()
 
     try {
+      setErrorMessage('')
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -97,12 +105,17 @@ function App() {
 
       const newChoreo = await response.json()
 
+      if (!response.ok) {
+        throw new Error(newChoreo.message || 'Unable to add choreography.')
+      }
+
       setChoreography([newChoreo, ...choreography])
 
       setFormData(emptyForm)
     }
     catch (error) {
       console.error('Error adding choreography:', error)
+      setErrorMessage(error.message)
     }
   }
 
@@ -125,6 +138,7 @@ function App() {
 
   const handleEditSave = async (id) => {
     try {
+      setErrorMessage('')
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -135,6 +149,10 @@ function App() {
 
       const updatedChoreo = await response.json()
 
+      if (!response.ok) {
+        throw new Error(updatedChoreo.message || 'Unable to update choreography.')
+      }
+
       setChoreography(choreography.map((choreo) => (
         choreo._id === id ? updatedChoreo : choreo
       )))
@@ -142,19 +160,27 @@ function App() {
     }
     catch (error) {
       console.error('Error updating choreography:', error)
+      setErrorMessage(error.message)
     }
   }
 
   const handleDelete = async (id) => {
     try {
-      await fetch(`${API_URL}/${id}`, {
+      setErrorMessage('')
+      const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE'
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Unable to delete choreography.')
+      }
 
       setChoreography(choreography.filter((choreo) => choreo._id !== id))
     }
     catch (error) {
       console.error('Error deleting choreography:', error)
+      setErrorMessage(error.message)
     }
   }
 
@@ -190,6 +216,8 @@ function App() {
   return (
     <div>
       <h1>Save Your Choreos!</h1>
+
+      {errorMessage && <p className="error-message">{errorMessage}</p>}
 
       <form onSubmit={handleSubmit}>
         <input
@@ -392,7 +420,15 @@ function App() {
               </div>
             ) : (
               <>
-                <h3>{choreo.title}</h3>
+                <h3>
+                  {choreo.videoUrl?.trim() ? (
+                    <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
+                      {choreo.title}
+                    </a>
+                  ) : (
+                    choreo.title
+                  )}
+                </h3>
 
                 <p><strong>Style:</strong> {choreo.style}</p>
                 <p><strong>Difficulty:</strong> {choreo.difficulty}</p>
@@ -401,10 +437,6 @@ function App() {
                 {choreo.notes && (
                   <p><strong>Notes:</strong> {choreo.notes}</p>
                 )}
-
-                <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
-                  {choreo.title}
-                </a>
 
                 <div className="card-actions">
                   <button
