@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 const API_URL = 'http://localhost:8000/api/choreos'
@@ -36,35 +36,66 @@ const defaultFilters = {
   sortBy: 'newest'
 }
 
-// fetch and display choreography
+const getThumbnailUrl = (videoUrl) => {
+  if (!videoUrl?.trim()) return ''
+  
+  try {
+    const url = new URL(videoUrl)
+
+    // youtube.com/watch?v=VIDEO_ID
+    if (url.hostname.includes('youtube.com')) {
+      const videoId = url.searchParams.get('v')
+      if (videoId) {
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      }
+    }
+
+    // youtu.be/VIDEO_ID
+    if (url.hostname.includes('youtu.be')) {
+      const videoId = url.pathname.slice(1)
+      if (videoId) {
+        return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      }
+    }
+
+    return ''
+  }
+  catch {
+    return ''
+  }
+}
+
 function App() {
   const [choreography, setChoreography] = useState([])
   const [formData, setFormData] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [editFormData, setEditFormData] = useState(emptyForm)
   const [filters, setFilters] = useState(defaultFilters)
-
-  // error checking for missing inputs
   const [errorMessage, setErrorMessage] = useState('')
+  const [showAddForm, setShowAddForm] = useState(false)
 
-  useEffect( () => {
+  // runs once page loads
+  useEffect(() => {
+    // calls backend, converts response to JSON, store in choreography
     const fetchChoreography = async () => {
       try {
         const response = await fetch(API_URL)
         if (!response.ok) {
           throw new Error('Unable to load choreography.')
         }
+
         const data = await response.json()
         setChoreography(data)
-      } 
-      catch (error) {
+      } catch (error) {
         console.error('Error fetching choreography:', error)
         setErrorMessage(error.message)
       }
     }
+
     fetchChoreography()
   }, [])
 
+  // Form Handlers
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -90,11 +121,13 @@ function App() {
     setFilters(defaultFilters)
   }
 
+  // Add new choreo function
   const handleSubmit = async (e) => {
+    // this prevents page refresh
     e.preventDefault()
-
     try {
       setErrorMessage('')
+      // sends a POST request, convert to JSON, adds item to top
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -110,16 +143,19 @@ function App() {
       }
 
       setChoreography([newChoreo, ...choreography])
-
+      // reset form
       setFormData(emptyForm)
-    }
-    catch (error) {
+      // close form before adding
+      setShowAddForm(false)
+    } catch (error) {
       console.error('Error adding choreography:', error)
       setErrorMessage(error.message)
     }
   }
 
+  // Edit choreo button function
   const handleEditStart = (choreo) => {
+    // saves the id, fill edit form with any changes
     setEditingId(choreo._id)
     setEditFormData({
       title: choreo.title ?? '',
@@ -131,14 +167,17 @@ function App() {
     })
   }
 
+  // Cancel editing
   const handleEditCancel = () => {
     setEditingId(null)
     setEditFormData(emptyForm)
   }
 
+  // Updates a choreo
   const handleEditSave = async (id) => {
     try {
       setErrorMessage('')
+      // sends PUT request with current id, replace updated item
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'PUT',
         headers: {
@@ -157,16 +196,17 @@ function App() {
         choreo._id === id ? updatedChoreo : choreo
       )))
       handleEditCancel()
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error updating choreography:', error)
       setErrorMessage(error.message)
     }
   }
 
+  // deletes a choreo
   const handleDelete = async (id) => {
     try {
       setErrorMessage('')
+      // sends DELETE request, filters out the current id
       const response = await fetch(`${API_URL}/${id}`, {
         method: 'DELETE'
       })
@@ -177,13 +217,13 @@ function App() {
       }
 
       setChoreography(choreography.filter((choreo) => choreo._id !== id))
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error deleting choreography:', error)
       setErrorMessage(error.message)
     }
   }
 
+  // filtering and sorting of choreos in db
   const filteredChoreography = choreography
     .filter((choreo) => {
       if (filters.style && choreo.style !== filters.style) {
@@ -214,72 +254,136 @@ function App() {
     })
 
   return (
-    <div>
-      <h1>Save Your Choreos!</h1>
+    <div className="dashboard-shell">
+      <section className="profile-hero">
+        <div className="profile-card">
+          <div className="profile-avatar">NB</div>
+
+          <div className="profile-copy">
+            <p className="eyebrow">Hello, Nam Bui</p>
+            <h1>My Choreo Library</h1>
+          </div>
+
+          <div className="hero-actions">
+            <button
+              type="button"
+              className="primary-button hero-button"
+              onClick={() => setShowAddForm((currentValue) => !currentValue)}
+            >
+              Add Dance
+            </button>
+          </div>
+        </div>
+
+      </section>
 
       {errorMessage && <p className="error-message">{errorMessage}</p>}
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="title"
-          placeholder="Title"
-          value={formData.title}
-          onChange={handleChange}
-        />
-        
-        <input
-          type="text"
-          name="videoUrl"
-          placeholder="Video URL"
-          value={formData.videoUrl}
-          onChange={handleChange}
-        />
-
-        <select
-          name="style"
-          value={formData.style}
-          onChange={handleChange}
+      {showAddForm && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setFormData(emptyForm)
+            setShowAddForm(false)
+          }}
         >
-          <option value="">Select Style</option>
-          {styleOptions.map((style) => (
-            <option key={style} value={style}>{style}</option>
-          ))}
-        </select>
+          <section
+            className="panel modal-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">New Entry</p>
+                <h2>Add a New Choreo</h2>
+              </div>
+            </div>
 
-        <select
-          name="difficulty"
-          value={formData.difficulty}
-          onChange={handleChange}
-        >
-          <option value="">Select Difficulty</option>
-          {difficultyOptions.map((difficulty) => (
-            <option key={difficulty} value={difficulty}>{difficulty}</option>
-          ))}
-        </select>
+            <form className="choreo-form" onSubmit={handleSubmit}>
+              <input
+                type="text"
+                name="title"
+                placeholder="Title"
+                value={formData.title}
+                onChange={handleChange}
+              />
 
-        <select
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-        >
-          <option value="">Select Status</option>
-          {statusOptions.map((status) => (
-            <option key={status} value={status}>{status}</option>
-          ))}
-        </select>
+              <input
+                type="text"
+                name="videoUrl"
+                placeholder="Video URL"
+                value={formData.videoUrl}
+                onChange={handleChange}
+              />
 
-        <textarea
-          name="notes"
-          placeholder="Notes"
-          value={formData.notes}
-          onChange={handleChange}
-        />
+              <select
+                name="style"
+                value={formData.style}
+                onChange={handleChange}
+              >
+                <option value="">Select Style</option>
+                {styleOptions.map((style) => (
+                  <option key={style} value={style}>{style}</option>
+                ))}
+              </select>
 
-        <button type="submit">Add Choreography</button>
-      </form>
+              <select
+                name="difficulty"
+                value={formData.difficulty}
+                onChange={handleChange}
+              >
+                <option value="">Select Difficulty</option>
+                {difficultyOptions.map((difficulty) => (
+                  <option key={difficulty} value={difficulty}>{difficulty}</option>
+                ))}
+              </select>
 
-      <div className="toolbar">
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <option value="">Select Status</option>
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+
+              <textarea
+                name="notes"
+                placeholder="Notes"
+                value={formData.notes}
+                onChange={handleChange}
+              />
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => {
+                    setFormData(emptyForm)
+                    setShowAddForm(false)
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="primary-button">Save Choreo</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Library</p>
+            <h2>Your Choreos</h2>
+          </div>
+          <p className="results-count">
+            Showing {filteredChoreography.length} of {choreography.length} choreos
+          </p>
+        </div>
+
         <div className="toolbar-grid">
           <select
             name="status"
@@ -327,9 +431,6 @@ function App() {
         </div>
 
         <div className="toolbar-footer">
-          <p className="results-count">
-            Showing {filteredChoreography.length} of {choreography.length} choreos
-          </p>
           <button
             type="button"
             className="secondary-button"
@@ -338,131 +439,139 @@ function App() {
             Clear Filters
           </button>
         </div>
-      </div>
+        
+        {/* list of choreos within library */}
+        <div className="choreo-container">
+          {filteredChoreography.map((choreo) => (
+            <article className="choreo-card" key={choreo._id}>
+              {editingId === choreo._id ? (
+                <div className="edit-form">
+                  <input
+                    type="text"
+                    name="title"
+                    placeholder="Title"
+                    value={editFormData.title}
+                    onChange={handleEditChange}
+                  />
 
-      <div className="choreo-container">
-        {filteredChoreography.map((choreo) => (
-          <div className="choreo-card" key={choreo._id}>
-            {editingId === choreo._id ? (
-              <div className="edit-form">
-                <input
-                  type="text"
-                  name="title"
-                  placeholder="Title"
-                  value={editFormData.title}
-                  onChange={handleEditChange}
-                />
+                  <input
+                    type="text"
+                    name="videoUrl"
+                    placeholder="Video URL"
+                    value={editFormData.videoUrl}
+                    onChange={handleEditChange}
+                  />
 
-                <input
-                  type="text"
-                  name="videoUrl"
-                  placeholder="Video URL"
-                  value={editFormData.videoUrl}
-                  onChange={handleEditChange}
-                />
-
-                <select
-                  name="style"
-                  value={editFormData.style}
-                  onChange={handleEditChange}
-                >
-                  <option value="">Select Style</option>
-                  {styleOptions.map((style) => (
-                    <option key={style} value={style}>{style}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="difficulty"
-                  value={editFormData.difficulty}
-                  onChange={handleEditChange}
-                >
-                  <option value="">Select Difficulty</option>
-                  {difficultyOptions.map((difficulty) => (
-                    <option key={difficulty} value={difficulty}>{difficulty}</option>
-                  ))}
-                </select>
-
-                <select
-                  name="status"
-                  value={editFormData.status}
-                  onChange={handleEditChange}
-                >
-                  <option value="">Select Status</option>
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>{status}</option>
-                  ))}
-                </select>
-
-                <textarea
-                  name="notes"
-                  placeholder="Notes"
-                  value={editFormData.notes}
-                  onChange={handleEditChange}
-                />
-
-                <div className="card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={handleEditCancel}
+                  <select
+                    name="style"
+                    value={editFormData.style}
+                    onChange={handleEditChange}
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="primary-button"
-                    onClick={() => handleEditSave(choreo._id)}
+                    <option value="">Select Style</option>
+                    {styleOptions.map((style) => (
+                      <option key={style} value={style}>{style}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    name="difficulty"
+                    value={editFormData.difficulty}
+                    onChange={handleEditChange}
                   >
-                    Save
-                  </button>
+                    <option value="">Select Difficulty</option>
+                    {difficultyOptions.map((difficulty) => (
+                      <option key={difficulty} value={difficulty}>{difficulty}</option>
+                    ))}
+                  </select>
+
+                  <select
+                    name="status"
+                    value={editFormData.status}
+                    onChange={handleEditChange}
+                  >
+                    <option value="">Select Status</option>
+                    {statusOptions.map((status) => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+
+                  <textarea
+                    name="notes"
+                    placeholder="Notes"
+                    value={editFormData.notes}
+                    onChange={handleEditChange}
+                  />
+
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={handleEditCancel}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      onClick={() => handleEditSave(choreo._id)}
+                    >
+                      Save
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <>
-                <h3>
-                  {choreo.videoUrl?.trim() ? (
-                    <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
-                      {choreo.title}
-                    </a>
+              ) : (
+                <>
+                  <div className="card-topline">
+                    <span className={`status-pill ${choreo.status?.toLowerCase().replaceAll(' ', '-') || 'unlisted'}`}>
+                      {choreo.status || 'No Status'}
+                    </span>
+                    <span className="difficulty-pill">{choreo.difficulty || 'Open Level'}</span>
+                  </div>
+
+                  <h3>
+                    {choreo.videoUrl?.trim() ? (
+                      <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
+                        {choreo.title}
+                      </a>
+                    ) : (
+                      choreo.title
+                    )}
+                  </h3>
+
+                  <p className="card-style">{choreo.style || 'Uncategorized Style'}</p>
+
+                  {choreo.notes ? (
+                    <p className="card-notes">{choreo.notes}</p>
                   ) : (
-                    choreo.title
+                    <p className="card-notes muted-text">No notes yet.</p>
                   )}
-                </h3>
 
-                <p><strong>Style:</strong> {choreo.style}</p>
-                <p><strong>Difficulty:</strong> {choreo.difficulty}</p>
-                <p><strong>Status:</strong> {choreo.status}</p>
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() => handleEditStart(choreo)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-button"
+                      onClick={() => handleDelete(choreo._id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </article>
+          ))}
+        </div>
 
-                {choreo.notes && (
-                  <p><strong>Notes:</strong> {choreo.notes}</p>
-                )}
-
-                <div className="card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEditStart(choreo)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => handleDelete(choreo._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {filteredChoreography.length === 0 && (
-        <p className="empty-state">No choreos match the current filters yet.</p>
-      )}
+        {filteredChoreography.length === 0 && (
+          <p className="empty-state">No choreos match the current filters yet.</p>
+        )}
+      </section>
     </div>
   )
 }
