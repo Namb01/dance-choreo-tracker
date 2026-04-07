@@ -555,46 +555,48 @@ function App() {
                     </div>
                   )}
 
-                  <div className="card-topline">
-                    <span className={`status-pill ${choreo.status?.toLowerCase().replaceAll(' ', '-') || 'unlisted'}`}>
-                      {choreo.status || 'No Status'}
-                    </span>
-                    <span className="difficulty-pill">{choreo.difficulty || 'Open Level'}</span>
-                  </div>
+                  <div className="card-body">
+                    <div className="card-topline">
+                      <span className={`status-pill ${choreo.status?.toLowerCase().replaceAll(' ', '-') || 'unlisted'}`}>
+                        {choreo.status || 'No Status'}
+                      </span>
+                      <span className="difficulty-pill">{choreo.difficulty || 'Open Level'}</span>
+                    </div>
 
-                  <h3>
-                    {choreo.videoUrl?.trim() ? (
-                      <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
-                        {choreo.title}
-                      </a>
+                    <h3>
+                      {choreo.videoUrl?.trim() ? (
+                        <a href={choreo.videoUrl} target="_blank" rel="noreferrer">
+                          {choreo.title}
+                        </a>
+                      ) : (
+                        choreo.title
+                      )}
+                    </h3>
+
+                    <p className="card-style">{choreo.style || 'Uncategorized Style'}</p>
+
+                    {choreo.notes ? (
+                      <p className="card-notes">{choreo.notes}</p>
                     ) : (
-                      choreo.title
+                      <p className="card-notes muted-text">No notes yet.</p>
                     )}
-                  </h3>
 
-                  <p className="card-style">{choreo.style || 'Uncategorized Style'}</p>
-
-                  {choreo.notes ? (
-                    <p className="card-notes">{choreo.notes}</p>
-                  ) : (
-                    <p className="card-notes muted-text">No notes yet.</p>
-                  )}
-
-                  <div className="card-actions">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() => handleEditStart(choreo)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="danger-button"
-                      onClick={() => handleDelete(choreo._id)}
-                    >
-                      Delete
-                    </button>
+                    <div className="card-actions">
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => handleEditStart(choreo)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() => handleDelete(choreo._id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
