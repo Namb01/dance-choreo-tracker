@@ -262,6 +262,10 @@ function App() {
           <div className="profile-copy">
             <p className="eyebrow">Hello, Nam Bui</p>
             <h1>My Choreo Library</h1>
+            <p className="profile-subtitle">
+              A personal space for organizing dances, keeping practice notes,
+              and building your next set list.
+            </p>
           </div>
 
           <div className="hero-actions">
@@ -291,11 +295,22 @@ function App() {
             className="panel modal-panel"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="section-heading">
+            <div className="section-heading modal-heading">
               <div>
                 <p className="eyebrow">New Entry</p>
                 <h2>Add a New Choreo</h2>
               </div>
+              <button
+                type="button"
+                className="icon-button"
+                onClick={() => {
+                  setFormData(emptyForm)
+                  setShowAddForm(false)
+                }}
+                aria-label="Close add dance form"
+              >
+                x
+              </button>
             </div>
 
             <form className="choreo-form" onSubmit={handleSubmit}>
@@ -378,66 +393,71 @@ function App() {
           <div>
             <p className="eyebrow">Library</p>
             <h2>Your Choreos</h2>
+            <p className="section-subtitle">
+              Browse your saved routines and shape the collection with filters.
+            </p>
           </div>
           <p className="results-count">
             Showing {filteredChoreography.length} of {choreography.length} choreos
           </p>
         </div>
 
-        <div className="toolbar-grid">
-          <select
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-          >
-            <option value="">By Status</option>
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>{status}</option>
-            ))}
-          </select>
+        <div className="toolbar-surface">
+          <div className="toolbar-grid">
+            <select
+              name="status"
+              value={filters.status}
+              onChange={handleFilterChange}
+            >
+              <option value="">By Status</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
 
-          <select
-            name="style"
-            value={filters.style}
-            onChange={handleFilterChange}
-          >
-            <option value="">By Style</option>
-            {styleOptions.map((style) => (
-              <option key={style} value={style}>{style}</option>
-            ))}
-          </select>
+            <select
+              name="style"
+              value={filters.style}
+              onChange={handleFilterChange}
+            >
+              <option value="">By Style</option>
+              {styleOptions.map((style) => (
+                <option key={style} value={style}>{style}</option>
+              ))}
+            </select>
 
-          <select
-            name="difficulty"
-            value={filters.difficulty}
-            onChange={handleFilterChange}
-          >
-            <option value="">By Difficulty</option>
-            {difficultyOptions.map((difficulty) => (
-              <option key={difficulty} value={difficulty}>{difficulty}</option>
-            ))}
-          </select>
+            <select
+              name="difficulty"
+              value={filters.difficulty}
+              onChange={handleFilterChange}
+            >
+              <option value="">By Difficulty</option>
+              {difficultyOptions.map((difficulty) => (
+                <option key={difficulty} value={difficulty}>{difficulty}</option>
+              ))}
+            </select>
 
-          <select
-            name="sortBy"
-            value={filters.sortBy}
-            onChange={handleFilterChange}
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="title-asc">Title A-Z</option>
-            <option value="title-desc">Title Z-A</option>
-          </select>
-        </div>
+            <select
+              name="sortBy"
+              value={filters.sortBy}
+              onChange={handleFilterChange}
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="title-asc">Title A-Z</option>
+              <option value="title-desc">Title Z-A</option>
+            </select>
+          </div>
 
-        <div className="toolbar-footer">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={resetFilters}
-          >
-            Clear Filters
-          </button>
+          <div className="toolbar-footer">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={resetFilters}
+            >
+              Clear Filters
+            </button>
+          </div>
         </div>
         
         {/* list of choreos within library */}
@@ -521,6 +541,20 @@ function App() {
                 </div>
               ) : (
                 <>
+                  {getThumbnailUrl(choreo.videoUrl) ? (
+                    <div className="card-thumbnail-wrap">
+                      <img
+                        className="card-thumbnail"
+                        src={getThumbnailUrl(choreo.videoUrl)}
+                        alt={`${choreo.title} thumbnail`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="card-thumbnail-placeholder">
+                      {/* <span>Dance</span> */}
+                    </div>
+                  )}
+
                   <div className="card-topline">
                     <span className={`status-pill ${choreo.status?.toLowerCase().replaceAll(' ', '-') || 'unlisted'}`}>
                       {choreo.status || 'No Status'}
@@ -569,7 +603,9 @@ function App() {
         </div>
 
         {filteredChoreography.length === 0 && (
-          <p className="empty-state">No choreos match the current filters yet.</p>
+          <div className="empty-state">
+            <p>No choreos match the current filters.</p>
+          </div>
         )}
       </section>
     </div>
