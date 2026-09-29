@@ -10,7 +10,7 @@ const choreographySchema = new Schema (
     },
     videoUrl: {
         type: String,
-        required: true,
+        default: '',
         trim: true
     },
     style: {
