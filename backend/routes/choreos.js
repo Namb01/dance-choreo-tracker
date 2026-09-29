@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Choreography = require("../models/Choreography");
+const Choreography = require("../models/choreography");
 
 // Create a new choreography
 router.post('/', async (req, res) => {
